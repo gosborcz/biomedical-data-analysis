@@ -106,3 +106,8 @@ results %>%
   write.table(row.names = FALSE, quote=FALSE)
 
 # STEP 17 save the results
+
+
+# extra STEP 18 - plot the densities of the counts (tpms, tpms.log and tpms.norm)
+
+

@@ -22,12 +22,12 @@ sample_info <- cbind(
 #STEP 3 apply filters for plotting - customise this as you wish e.g. add log2FC > 0 for upregulated genes only
 
 to_plot <- results %>% 
-  filter(FDR < 0.01) %>% 
+  filter(FDR < 0.05) %>% 
   select(sample_info$samples)
 
 #STEP 4 add rownames to the to_plot table to show them on the heatmap
 rownames(to_plot) <- results %>% 
-  filter(FDR < 0.01) %>% 
+  filter(FDR < 0.05) %>% 
   select(gene_name) %>% t()
 
 
@@ -48,10 +48,10 @@ cut.threshold <- function(x, threshold = 2.5) {
 }
 
 #STEP 8 plot the heatmap - see heatmap.2 documentation for details https://www.rdocumentation.org/packages/gplots/versions/3.1.3/topics/heatmap.2
-to_plot %>%
+to_plot %>% data.matrix() %>%
   apply(1, scale) %>%
   t %>%
-  apply(1, cut.threshold, threshold = 2.5) %>%
+  apply(1, cut.threshold, threshold = 3) %>%
   t %>%
   `colnames<-`(colnames(to_plot)) %>%
   heatmap.2(
@@ -69,3 +69,4 @@ to_plot %>%
     cexRow = 0.7,
     offsetCol = 0
   )
+

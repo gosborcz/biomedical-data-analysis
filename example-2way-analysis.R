@@ -2,6 +2,7 @@ library("ggpubr")
 library("dplyr")
 library("magrittr")
 
+setwd("/projects/biomedical-data-analysis") # put the path to the project here
 
 df <- read.table(
   file       = "./two-way-examples/two-way-data-first-example.tsv",
@@ -22,6 +23,14 @@ df$group <- interaction(df$sex, df$age, sep = "_") #this is a factor which we wa
 # (A) run pairwise.t.test for posthoc comparisons; use the data in the df, experiment with the different p-value adjustment methods
 # hint - google how to get help on a function
 # save your result as a variable named pw_all
+
+pw_all <- 
+  pairwise.t.test(
+    x = df$behaviour,
+    g = df$group,
+    p.adjust.method = "bonferroni"
+    )
+
 
 # (B) inspect how pw_all looks like, what is its class?
 # the function below is a helper function to extract p-values
@@ -48,7 +57,23 @@ ann_df <- data.frame(
   group2     = "old",
   p          = c(p_female, p_male),
   y.position = y_max + 0.5           
-) 
+) %>% dplyr::mutate(
+  p.signif = ifelse( #this ifelse is a function
+    p > 0.05, #condtion so if my p-value is > 0.05
+    "ns", # if true - then make it ns
+    ifelse( #if false - run another ifelse
+      p > 0.01, # condition nr 2
+      "*",
+      ifelse(
+        p > 0.01,
+        "**",
+        "***"
+      )
+    )
+  )
+)
+  
+
 
 # (E) inspect ann_df, ad a column p.signif that will have stars instead of p-values (hint mutate the p-value column)
 
@@ -57,7 +82,7 @@ p <- ggboxplot(
   x        = "age",
   y        = "behaviour",
   color    = "age",
-  palette  = "jco", # (F) can you find other possible palletes? can you define your own palette?
+  palette  = "Blues", # (F) can you find other possible palletes? can you define your own palette?
   add      = "jitter",
   facet.by = "sex"
 ) +

@@ -14,7 +14,7 @@ require(tidyverse)
 require(preprocessCore)
 require(readr)
 
-# STEP 2 read in data - remember for this type of analysis use tmp files
+# STEP 2 read in data - remember for this type of analysis use tpm files
 # remember to change the path if needed
 raw_data <- read_tsv(
   "transcriptomic-analysis/data/salmon.merged.gene_tpm.tsv"
@@ -36,6 +36,7 @@ sample_info <- cbind(
 # STEP 5 make a new table that will host results, start with the gene_id and gene_name columns
 results <- raw_data %>% 
   select(c("gene_id", "gene_name")) 
+
 
 # STEP 6 subset the raw data to only have counts (numbers) and set its rownames to gene_id
 tpms <- raw_data[,sample_info$samples]
@@ -121,10 +122,56 @@ results$log2FC <- group_means$rup_mean-group_means$ctrl_mean # negative values i
 # STEP 16 print a list of top genes
 results %>% 
   filter(FDR < 0.05) %>% # FDR < 5% - can be adjusted
-  filter(log2FC > 1) %>% # direction UP- can be adjusted
+  #filter(log2FC > 1) %>% # direction UP- can be adjusted
   dplyr::select(gene_name) %>%
   write.table(row.names = FALSE, quote=FALSE)
 
 # STEP 17 save the results
 results %>% 
   write_tsv("anova_results.csv")
+
+# extra STEP 18 - plot the densities of the counts (tpms, tpms.log and tpms.norm)
+
+tpms_long <- tpms %>%                           
+  as.data.frame() %>% 
+  rownames_to_column("gene_id") %>% 
+  pivot_longer(-gene_id, names_to = "sample", values_to = "value") %>% 
+  mutate(type = "TPM_raw")
+
+tpms_norm_long <- tpms.norm %>%              
+  as.data.frame() %>% 
+  rownames_to_column("gene_id") %>% 
+  pivot_longer(-gene_id, names_to = "sample", values_to = "value") %>% 
+  mutate(type = "TPM_quantile")
+
+tpms_log_long <- tpms.log %>%                 
+  as.data.frame() %>% 
+  rownames_to_column("gene_id") %>% 
+  pivot_longer(-gene_id, names_to = "sample", values_to = "value") %>% 
+  mutate(type = "TPM_log2")
+
+counts_long <- bind_rows(tpms_long, tpms_norm_long, tpms_log_long)
+
+gghistogram(
+  counts_long,
+  x        = "value",
+  add      = "mean", # this is the dashed line
+  rug      = TRUE,
+  color    = "type",
+  fill     = "type",
+  palette  = c("#00AFBB", "#E7B800", "#FC4E07"),
+  bins = 100000,
+  xlim = c(0,1000),
+  facet.by = "type",      
+  ncol     = 1            
+) +
+  theme_minimal(base_size = 12) +
+  labs(
+    title = "density of gene-level expression values",
+    x      = "expression value",
+    y      = "density",
+    color  = "Count type",
+    fill   = "Count type"
+  )
+
+
